@@ -1,0 +1,64 @@
+version: '3.9'
+
+# WHY DOCKER COMPOSE?
+# Orchestrates multiple services (Postgres + Backend + Frontend)
+# with a single `docker-compose up` command.
+# Each service runs in its own container but shares a network.
+
+services:
+  # ── PostgreSQL with pgvector extension ──────────────────────────────
+  # We use ankane/pgvector instead of plain postgres because it comes
+  # with the pgvector extension pre-installed.
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: rag_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: rag_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI Backend ──────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rag_backend
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/rag_db
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      DEBUG: "false"
+      ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3000,http://frontend:3000"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - backend_logs:/app/logs
+
+  # ── React Frontend ───────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: rag_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8000/api/v1
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  backend_logs:
