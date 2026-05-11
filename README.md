@@ -164,24 +164,6 @@ Full interactive docs at: **http://localhost:8000/docs**
 
 ## ☁️ Deploy to Render
 
-1. **Fork** this repo to your GitHub account
-
-2. Go to [dashboard.render.com](https://dashboard.render.com) → **New → Blueprint**
-
-3. Connect your GitHub repo — Render reads `render.yaml` automatically
-
-4. Set environment variables in the Render dashboard:
-   - `ANTHROPIC_API_KEY` → your Anthropic key
-
-5. Click **Deploy** — Render will create:
-   - PostgreSQL database (free tier)
-   - Python backend service
-   - Static frontend site
-
-6. Update `ALLOWED_ORIGINS` in backend env vars with your frontend URL
-
----
-
 ## 📁 Project Structure
 
 ```
